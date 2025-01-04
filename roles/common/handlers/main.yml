@@ -1,0 +1,4 @@
+---
+# file: roles/common/handlers/main.yml
+
+- import_tasks: networking.yml

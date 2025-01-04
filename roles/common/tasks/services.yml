@@ -1,0 +1,41 @@
+---
+# file: roles/common/tasks/services.yml
+
+- name: synchronize /etc/logrotate.conf file
+  copy:
+    src: files/etc/logrotate.conf
+    dest: /etc/logrotate.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: services
+
+- name: disable services
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+  loop:
+    - apt-daily.timer
+    - apt-daily.service
+    - apt-daily-upgrade.timer
+    - apt-daily-upgrade.service
+  ignore_errors: yes
+  tags: services
+
+- name: mask services
+  systemd:
+    name: "{{ item }}"
+    masked: true
+  loop:
+    - apt-daily.timer
+    - apt-daily.service
+    - apt-daily-upgrade.timer
+    - apt-daily-upgrade.service
+  ignore_errors: yes
+  tags: services
+
+- name: create security_state.dat file
+  copy:
+    dest: "/var/log/security_state.dat"
+    content: "normal\n"
+  tags: services

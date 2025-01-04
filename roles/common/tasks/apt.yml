@@ -1,0 +1,10 @@
+---
+# file: roles/common/tasks/apt.yml
+
+- name: install packages
+  apt:
+    name:
+      - time
+      - systemd-container
+    state: present
+  tags: apt

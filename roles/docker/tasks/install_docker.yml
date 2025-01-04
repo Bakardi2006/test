@@ -1,0 +1,67 @@
+---
+# File: roles/docker/tasks/install_docker.yml
+
+- name: Uncomment docker repo
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '^#(.*download.docker.com.*)$'
+    replace: '\1'
+  register: change_result
+  tags: apt 
+
+- name: update apt cache
+  apt:
+    upgrade: no
+    update_cache: true
+  when: change_result.changed
+  tags: apt
+
+- name: install docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-ce-rootless-extras
+      - uidmap
+    state: present
+
+- name: stop services
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - docker.service
+    - docker.socket
+  ignore_errors: yes
+  tags: services
+
+- name: disable services
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+  loop:
+    - docker.service
+    - docker.socket
+  ignore_errors: yes
+  tags: services
+
+- name: mask services
+  systemd:
+    name: "{{ item }}"
+    masked: true
+  loop:
+    - docker.service
+    - docker.socket
+  ignore_errors: yes
+  tags: services
+
+- name: check if pasta apparmor rule exists
+  stat:
+    path: /etc/apparmor.d/usr.bin.passt
+  register: rule_stat
+
+- name: move rule to disabled directory if exists
+  command: mv /etc/apparmor.d/usr.bin.passt /etc/apparmor.d/disable/
+  when: rule_stat.stat.exists
+  

@@ -1,0 +1,36 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto ens18
+iface ens18 inet static
+        address {{ hostvars[inventory_hostname]['ansible_host'] }}/27
+        gateway 192.168.{{ vlan }}.1
+        post-up ip route add 10.0.0.0/8 via 192.168.{{ vlan }}.254
+        post-up ip route add 192.168.0.0/16 via 192.168.{{ vlan }}.254
+        #private networks via special routing table
+        post-up ip rule add from all to 10.0.0.0/8 lookup net248
+        post-up ip rule add from all to 192.168.0.0/16 lookup net248
+        post-up ip rule add from all to 192.168.{{ vlan }}.192/27 lookup main
+        #gateway
+        post-up ip route add 192.168.{{ vlan }}.1/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        #firewall
+        post-up ip route add 192.168.{{ vlan }}.254/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        #storage dell
+        post-up ip route add 192.168.{{ vlan }}.56/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        #storage netappmc
+        post-up ip route add 192.168.{{ vlan }}.52/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        post-up ip route add 192.168.{{ vlan }}.53/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        #backup
+        post-up ip route add 192.168.{{ vlan }}.97/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        post-up ip route add 192.168.{{ vlan }}.98/32 dev ens18 src {{ hostvars[inventory_hostname]['ansible_host'] }} table net{{ vlan }}
+        #blackhole range
+        post-up ip route add blackhole 192.168.{{ vlan }}.0/24 table net{{ vlan }}
+        #default gw for the table
+        post-up ip route add default via 192.168.{{ vlan }}.254 dev ens18 table net{{ vlan }}

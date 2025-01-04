@@ -1,0 +1,5 @@
+---
+# File: roles/docker/tasks/main.yml
+
+- import_tasks: install_docker.yml
+- import_tasks: user_tasks.yml

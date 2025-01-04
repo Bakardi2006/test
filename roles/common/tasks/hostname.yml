@@ -1,0 +1,12 @@
+---
+# file: roles/common/tasks/hostname.yml
+
+- name: Generate hostname configuration file
+  template:
+    src: hostname.j2
+    dest: /etc/hostname
+
+- name: Set hostname using hostnamectl
+  command: hostnamectl set-hostname {{ inventory_hostname }}
+  register: hostname_result
+  changed_when: "'Changed' in hostname_result.stdout"

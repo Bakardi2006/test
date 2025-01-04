@@ -1,0 +1,52 @@
+---
+# File: roles/docker/tasks/user_tasks.yml
+
+- name: create app group
+  group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid }}"
+  with_items: 
+    - { name: ryantest, gid: 1000 }
+  tags: users
+
+- name: create app user
+  user:
+    home: "{{ item.home }}"
+    uid: "{{ item.uid }}"
+    group: "{{ item.group }}"
+    name: "{{ item.group }}"
+    shell: "{{ item.shell }}"
+    create_home: yes 
+  with_items:
+    - { home: /data/ryantest, uid: 1000, group: ryantest, shell: /bin/bash}
+
+- name: adding env var ryantest .bashrc
+  blockinfile:
+    path: /data/ryantest/.bashrc
+    block: |
+      export PATH=/usr/bin:$PATH
+      export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+
+- name: check if rootless docker service file exists
+  ansible.builtin.stat:
+    path: /home/ryantest/.config/systemd/user/docker.service
+  ignore_errors: yes
+  register: file_stat 
+
+- name: install rootless docker
+  vars:
+    ansible_ssh_pipelining: no
+  command: "/usr/bin/dockerd-rootless-setuptool.sh install"
+  become_method: machinectl
+  become: yes
+  become_user: ryantest
+  when: not file_stat.stat.exists
+
+- name: check if user is lingering
+  command: loginctl user-status ryantest
+  changed_when: false
+  register: user_status_result
+
+- name: enable linger for ryantest
+  command: loginctl enable-linger ryantest
+  when: "'Linger: yes' not in user_status_result.stdout"

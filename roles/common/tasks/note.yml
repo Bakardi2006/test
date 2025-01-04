@@ -1,0 +1,8 @@
+---
+# file: roles/common/tasks/note.yml
+
+- name: apply server note
+  copy:
+    dest: "/root/.admin.notes"
+    content: "{{ annotation }}"
+  tags: note

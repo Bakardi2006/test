@@ -1,0 +1,11 @@
+---
+# file: roles/common/tasks/dns.yml
+
+- name: synchronize /etc/resolv.conf file
+  copy:
+    src: files/etc/resolv.conf
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: dns

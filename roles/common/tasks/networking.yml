@@ -1,0 +1,16 @@
+---
+# file: roles/common/tasks/networking.yml
+
+- name: copy network configuration file
+  template:
+    src: "interfaces.j2"
+    dest: /etc/network/interfaces
+  notify: Reload network service
+  tags: networking
+
+- name: ensure network service is enabled and running
+  service:
+    name: networking
+    state: started
+    enabled: yes
+  tags: networking

@@ -1,0 +1,12 @@
+---
+
+# file: site.yml
+- hosts: rayantest
+  gather_facts: yes
+# serial: 1
+  vars:
+    - vlan: "233"
+    - annotation: "\nAnnotation: rayantest/rootless docker \n\n"
+  roles:
+    - common
+    - docker

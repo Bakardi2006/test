@@ -1,0 +1,7 @@
+---
+# file: roles/common/handlers/networking.yml
+
+- name: Reload network service
+  service:
+    name: networking
+    state: reloaded

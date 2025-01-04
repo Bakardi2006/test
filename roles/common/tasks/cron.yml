@@ -1,0 +1,38 @@
+---
+# file: roles/common/tasks/cron.yml
+
+- name: path entry on top of crontab
+  cron:
+    name: PATH
+    env: yes
+    job: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  tags: cron
+
+- name: cron touch
+  cron:
+    name: "cron touch"
+    minute: "*/5"
+    job: "/root/scripts/cron_touch.sh"
+  tags: cron
+
+- name: dstat daily
+  cron:
+    name: "dstat daily"
+    minute: "1"
+    hour: "0"
+    job: "/root/scripts/launch_dstat_daily.sh"
+  tags: cron
+
+- name: dstat daily
+  cron:
+    name: "dstat at reboot"
+    special_time: reboot
+    job: "/root/scripts/launch_dstat_daily.sh"
+  tags: cron
+
+- name: dostatus
+  cron:
+    name: "dostatus"
+    special_time: weekly
+    job: "/root/scripts/dostatus.sh"
+  tags: cron

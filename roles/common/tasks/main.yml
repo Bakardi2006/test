@@ -1,0 +1,15 @@
+---
+# file: roles/common/tasks/main.yml
+- import_tasks: networking.yml
+- import_tasks: apt.yml
+- import_tasks: hostname.yml
+- import_tasks: hosts.yml
+- import_tasks: sysctl.yml
+- import_tasks: dns.yml
+- import_tasks: postfix.yml
+- import_tasks: note.yml
+- import_tasks: ps1.yml
+- import_tasks: lvm.yml
+- import_tasks: nagios.yml
+- import_tasks: cron.yml
+- import_tasks: services.yml

@@ -1,0 +1,102 @@
+---
+# file: roles/common/tasks/lvm.yml
+
+- name: install lvm2
+  apt:
+    name:
+      - lvm2
+    state: present
+  tags: lvm
+
+- name: check if vg exists
+  shell: vgdisplay datavg 2>&1
+  register: vg_check
+  changed_when: false
+  ignore_errors: yes
+  tags: lvm
+
+- name: check if lv exists
+  shell: lvdisplay /dev/datavg/datalv 2>&1
+  register: lv_check
+  changed_when: false
+  ignore_errors: yes
+  tags: lvm
+
+- name: create pv and vg
+  lvg:
+    vg: datavg
+    pvs: /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1
+  when: "'not found' in vg_check.stdout"
+  tags: lvm
+
+- name: create lv
+  lvol:
+    lv: datalv
+    vg: datavg
+    size: 100%FREE
+    state: present
+  when: "'not found' in lv_check.stdout"
+  tags: lvm
+
+- name: format lv as ext4
+  filesystem:
+    fstype: ext4
+    dev: /dev/datavg/datalv
+  tags: lvm
+
+- name: create mount point dir
+  file:
+    path: /data
+    state: directory
+    mode: '0755'
+  tags: lvm
+
+- name: get disk uuid
+  shell: blkid | grep /dev/mapper/datavg-datalv | awk '{print $2}' | sed 's/"//g'
+  register: uuid
+  changed_when: false
+  tags: lvm
+
+- name: debug uuid 
+  debug:
+    var: uuid.stdout
+  tags: lvm
+
+- name: add lv to /etc/fstab
+  lineinfile:
+    path: /etc/fstab
+    line: '{{ uuid.stdout }}   /data           ext4    defaults        0       2'
+    create: yes
+  register: fstab_content
+  tags: lvm
+
+- name: issue daemon-reload to pick up fstab changes
+  systemd:
+    daemon_reload: yes
+  tags: lvm
+  when: fstab_content.changed
+
+- name: read /etc/fstab
+  slurp:
+    src: /etc/fstab
+  register: fstab_contents
+  tags: lvm
+
+- name: get the /data entry from /etc/fstab
+  set_fact:
+    fstab_data_entry: "{{ item }}"
+  loop: "{{ fstab_contents['content'] | b64decode | split('\n') }}"
+  when: "'/data' in item"
+  tags: lvm
+
+- name: check if /data is mounted
+  shell: mountpoint -q /data
+  register: mount_check
+  changed_when: false
+  ignore_errors: yes
+  tags: lvm
+
+- name: mount /data
+  command: mount /data
+  when: mount_check.rc
+  tags: lvm
