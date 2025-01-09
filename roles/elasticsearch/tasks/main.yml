@@ -1,0 +1,5 @@
+---
+# file: roles/elasticsearch/tasks/main.yml
+
+- import_tasks: apt.yml
+- import_tasks: setup.yml

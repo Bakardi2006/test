@@ -1,0 +1,13 @@
+---
+# file: roles/elasticsearch/handlers/elasticsearch.yml
+
+- name: restart elasticsearch
+  systemd:
+    name: elasticsearch
+    state: started
+
+- name: reload elasticsearch
+  systemd:
+    name: elasticsearch
+    state: reloaded
+  when: elasticsearch_config_check.rc == 0

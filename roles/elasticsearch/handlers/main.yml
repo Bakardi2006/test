@@ -1,0 +1,4 @@
+---
+# file: roles/elasticsearch/handlers/main.yml
+
+- import_tasks: elasticsearch.yml

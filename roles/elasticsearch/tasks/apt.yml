@@ -1,0 +1,46 @@
+---
+# file: roles/elasticsearch/tasks/apt.yml
+
+- name: Download elasticsearch GPG key
+  get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /tmp/elasticsearch.gpg
+    mode: "0644"
+  tags: apt
+
+- name: Convert GPG key to keyring format
+  command: gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg /tmp/elasticsearch.gpg
+  tags: apt
+
+- name: cleanup elasticsearch GPG key
+  file:
+    path: /tmp/elasticsearch.gpg
+    state: absent
+  tags: apt
+
+- name: add elasticsearch repo
+  blockinfile:
+    path: /etc/apt/sources.list
+    state: present
+    block: |
+      # elasticsearch 5.x
+      deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/5.x/apt stable main
+  register: change_result
+  tags: apt
+
+- name: update apt package cache
+  apt:
+    upgrade: no
+    update_cache: yes
+    #cache_valid_time: 3600
+  when: ansible_os_family == 'Debian' and change_result.changed
+  tags: apt
+
+- name: install required apt packages
+  apt:
+    name:
+      - apt-transport-https
+      - elasticsearch
+      - openjdk-17-jdk
+    state: present
+  tags: apt

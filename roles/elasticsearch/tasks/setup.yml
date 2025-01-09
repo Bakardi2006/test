@@ -1,0 +1,63 @@
+---
+# file: roles/elasticsearch/tasks/setup.yml
+
+- name: check if elasticsearch logs directory exists
+  stat:
+    path: /data/elasticsearch
+  register: elasticsearch_logs_directory
+  tags: elasticsearch
+
+- name: stop elasticsearch
+  systemd:
+    name: elasticsearch
+    state: stopped
+  when: not elasticsearch_logs_directory.stat.exists
+  tags: elasticsearch
+
+- name: ensure dir exist with right perms
+  file:
+    state: directory
+    path: "{{ item.dir }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - { dir: "/data/elasticsearch", owner: "elasticsearch", group: "elasticsearch", mode: "0750" }
+  tags: elasticsearch
+
+- name: issue daemon-reload to pick up config changes
+  systemd:
+    daemon_reload: yes
+  tags: elasticsearch
+  when: sync_result.changed
+
+- name: synchronize elasticsearch files
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  tags: elasticsearch
+  with_items:
+    - { src: 'files/etc/elasticsearch/elasticsearch.yml', dest: '/etc/elasticsearch/elasticsearch.yml', owner: root, group: elasticsearch, mode: 640 }
+    - { src: 'files/etc/elasticsearch/jvm.options', dest: '/etc/elasticsearch/jvm.options', owner: root, group: elasticsearch, mode: 640 }
+    - { src: 'files/etc/elasticsearch/log4j2.properties', dest: '/etc/elasticsearch/log4j2.properties', owner: root, group: elasticsearch, mode: 640 }
+  register: elasticsearchsync_result_1
+
+- name: reload elasticsearch if config changed
+  systemd:
+    name: elasticsearch
+    state: reloaded
+  when: elasticsearchsync_result_1.changed
+  ignore_errors: true
+  tags: elasticsearch
+ 
+- name: be sure elasticsearch is enabled and running 
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  ignore_errors: true
+  tags: elasticsearch
+  
